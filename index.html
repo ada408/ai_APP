@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>推广机会雷达</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2736%27 fill=%27%232563eb%27/%3E%3Ctext x=%2796%27 y=%27124%27 font-size=%27100%27 text-anchor=%27middle%27%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E'>
+<link rel="manifest" href='data:application/manifest+json,{"name":"推广机会雷达","short_name":"推广雷达","start_url":"index.html","scope":"./","display":"standalone","orientation":"portrait","background_color":"%23ffffff","theme_color":"%232563eb","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2736%27 fill=%27%232563eb%27/%3E%3Ctext x=%2796%27 y=%27124%27 font-size=%27100%27 text-anchor=%27middle%27%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"},{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2736%27 fill=%27%232563eb%27/%3E%3Ctext x=%2796%27 y=%27124%27 font-size=%27100%27 text-anchor=%27middle%27%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E","sizes":"512x512","type":"image/svg+xml"}]}'>
+<style>
+  :root{
+    --blue:#2563eb; --blue-d:#1d4ed8; --bg:#f3f5f9; --card:#fff;
+    --txt:#1f2937; --sub:#6b7280; --line:#e5e7eb; --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+    --chip:#eef2ff; --chip2:#fef3c7; --chip3:#fee2e2;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+
+  /* ===== 密码锁 ===== */
+  #lock{position:fixed;inset:0;z-index:999;background:linear-gradient(135deg,#2563eb,#4f46e5);
+        display:flex;align-items:center;justify-content:center;padding:24px}
+  #lock.hide{display:none}
+  .lockbox{width:100%;max-width:320px;text-align:center;color:#fff}
+  .lockbox .ico{font-size:52px;line-height:1;margin-bottom:10px}
+  .lockbox h2{margin:0 0 6px;font-size:19px;font-weight:700;letter-spacing:1px}
+  .lockbox p{margin:0 0 20px;font-size:12px;opacity:.85}
+  .lockbox input{width:100%;padding:13px 14px;font-size:16px;border:none;border-radius:12px;
+                 text-align:center;letter-spacing:2px;outline:none;background:#fff;color:var(--txt)}
+  .lockbox button{margin-top:12px;width:100%;padding:13px;font-size:15px;font-weight:700;
+                  border:none;border-radius:12px;background:#fff;color:var(--blue-d);cursor:pointer}
+  .lockbox button:active{transform:scale(.98)}
+  #pwderr{margin-top:12px;font-size:13px;color:#ffe4e6;min-height:18px;font-weight:600}
+
+  /* ===== 主体 ===== */
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .app.hide{display:none}
+  header{background:linear-gradient(135deg,var(--blue),#4f46e5);color:#fff;padding:14px 16px 12px}
+  header h1{margin:0;font-size:17px;font-weight:700}
+  .meta{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .meta .pill{background:rgba(255,255,255,.18);padding:3px 9px;border-radius:20px;font-size:11px}
+  main{flex:1;padding:12px;padding-bottom:76px}
+  .sec{display:none}.sec.on{display:block}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:11px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card.folded{opacity:.6;border-style:dashed}
+  .badges{display:flex;gap:4px;flex-wrap:wrap}
+  .b{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:600;white-space:nowrap}
+  .b.score{background:var(--blue);color:#fff;font-size:12px}
+  .b.ok{background:#dcfce7;color:var(--ok)}
+  .b.warn{background:var(--chip2);color:var(--warn)}
+  .b.bad{background:var(--chip3);color:var(--bad)}
+  .b.blk{background:#111827;color:#fff}
+  .b.blue{background:var(--chip);color:var(--blue-d)}
+  .b.gray{background:#f1f5f9;color:#475569}
+  .pname{font-size:15px;font-weight:700;margin:7px 0 2px;line-height:1.3}
+  .pco{font-size:11px;color:var(--sub)}
+  .pline{font-size:12.5px;margin:5px 0;display:flex;gap:6px;align-items:baseline}
+  .pline .k{color:var(--sub);min-width:52px;flex-shrink:0}
+  .acts{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .btn{font-size:12px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--txt);cursor:pointer}
+  .btn.p{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.s{background:#f8fafc}
+  .btn.dg{background:#fff;color:var(--bad);border-color:#fecaca}
+  .btn:active{transform:scale(.97)}
+
+  .filters{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:11px}
+  .frow{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0}
+  .flabel{font-size:11px;color:var(--sub);width:100%}
+  .chip{font-size:12px;padding:5px 10px;border-radius:18px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  .chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  select{font-size:13px;padding:6px 8px;border-radius:9px;border:1px solid var(--line);background:#fff;max-width:100%}
+
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:50;align-items:flex-end;justify-content:center}
+  .mask.on{display:flex}
+  .sheet{background:#fff;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px}
+  .sheet h2{margin:0 0 6px;font-size:17px}
+  .field{margin:9px 0;font-size:13px;line-height:1.55}
+  .field .k{color:var(--sub);font-size:11px;display:block;margin-bottom:2px}
+  .ev{background:#f8fafc;border-left:3px solid var(--blue);padding:8px 10px;border-radius:6px;font-size:12.5px;color:#334155;white-space:pre-wrap;word-break:break-word}
+  .close{position:sticky;top:0;text-align:right}
+  .close span{font-size:13px;color:var(--blue);cursor:pointer;background:#fff;padding:4px 10px;border-radius:20px;border:1px solid var(--line)}
+
+  nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:40}
+  nav a{flex:1;text-align:center;padding:8px 0 6px;font-size:11px;color:var(--sub);text-decoration:none;cursor:pointer}
+  nav a .ic{font-size:19px;display:block;line-height:1}
+  nav a.on{color:var(--blue);font-weight:700}
+
+  .blk{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:11px}
+  .blk h3{margin:0 0 8px;font-size:14px}
+  .blk label{font-size:12px;color:var(--sub);display:block;margin:10px 0 3px}
+  input[type=range]{width:100%}
+  .wrow{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .wrow .wn{font-size:12px;width:80px}
+  .wrow .wv{font-size:12px;color:var(--blue);width:36px;text-align:right}
+  textarea{width:100%;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px;height:66px;resize:vertical;font-family:monospace}
+  .kv{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dashed var(--line);gap:8px}
+  .empty{text-align:center;color:var(--sub);padding:30px 10px;font-size:13px}
+  .tag{display:inline-block;font-size:11px;background:var(--chip);color:var(--blue-d);padding:3px 8px;border-radius:6px;margin:2px}
+  .danger{color:var(--bad)}
+  .sm{font-size:11px;color:var(--sub)}
+  a{color:var(--blue);word-break:break-all}
+</style>
+</head>
+<body>
+
+<!-- ========== 密码锁（不加载任何数据） ========== -->
+<div id="lock">
+  <div class="lockbox">
+    <div class="ico">🔒</div>
+    <h2>推广机会雷达</h2>
+    <p>请输入访问密码以继续</p>
+    <input type="password" id="pwd" placeholder="访问密码" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
+    <button onclick="unlock()">解 锁</button>
+    <div id="pwderr"></div>
+  </div>
+</div>
+
+<!-- ========== 主应用 ========== -->
+<div class="app hide" id="app">
+  <header>
+    <h1>📡 推广机会雷达</h1>
+    <div class="meta">
+      <span class="pill" id="m-update">更新：—</span>
+      <span class="pill" id="m-count">项目：—</span>
+      <span class="pill" id="m-new">今日新增：—</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 发现 -->
+    <section class="sec on" id="sec-discover">
+      <div id="loadbox" class="card" style="text-align:center;color:var(--sub)">数据加载中，请稍后刷新</div>
+      <div class="filters" id="filters" style="display:none">
+        <div class="frow"><span class="flabel">产品类型</span><span id="f-type"></span></div>
+        <div class="frow"><span class="flabel">合规标签</span><span id="f-comp"></span></div>
+        <div class="frow"><span class="flabel">推广渠道</span><span id="f-chan"></span></div>
+        <div class="frow"><span class="flabel">最低佣金</span>
+          <span class="chip" data-f="yield" data-v="all">全部</span>
+          <span class="chip" data-f="yield" data-v="high">仅高收益(≥30%/≥50元)</span>
+        </div>
+        <div class="frow"><span class="flabel">排序</span>
+          <select id="sort">
+            <option value="score">综合分</option>
+            <option value="fresh">最新上线</option>
+            <option value="rev">最高佣金</option>
+            <option value="fast">最快结算</option>
+          </select>
+        </div>
+      </div>
+      <div id="list"></div>
+    </section>
+
+    <!-- 在跟 -->
+    <section class="sec" id="sec-follow">
+      <div class="blk"><h3>📌 我的跟进</h3>
+        <div class="sm">点「已尝试」加入此处，可记录投入时间与到账情况（保存在本机 localStorage）。</div>
+      </div>
+      <div id="follow-list"></div>
+    </section>
+
+    <!-- 排行 -->
+    <section class="sec" id="sec-rank">
+      <div class="blk"><h3>⏱️ 时薪榜</h3><div id="rank-hour"></div></div>
+      <div class="blk"><h3>💰 到账率榜</h3><div id="rank-rate"></div></div>
+      <div class="blk"><h3>⚠️ 踩坑榜</h3><div id="rank-pit"></div></div>
+    </section>
+
+    <!-- 设置 -->
+    <section class="sec" id="sec-set">
+      <div class="blk">
+        <h3>🔄 反馈同步码</h3>
+        <div class="sm">复制同步码，在 WorkBuddy 中粘贴即可回传反馈，修正下次评分。</div>
+        <textarea id="sync-out" readonly placeholder="点「生成同步码」"></textarea>
+        <div class="acts"><button class="btn p" onclick="genSync()">生成同步码</button><button class="btn" onclick="copySync()">复制</button></div>
+        <label>导入同步码</label>
+        <textarea id="sync-in" placeholder="粘贴同步码后点导入"></textarea>
+        <div class="acts"><button class="btn p" onclick="importSync()">导入并恢复</button></div>
+      </div>
+      <div class="blk">
+        <h3>🎯 关注关键词</h3>
+        <div id="kw-list"></div>
+        <div class="acts"><input id="kw-in" placeholder="添加领域词/模式词" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:13px"><button class="btn p" onclick="addKw()">添加</button></div>
+      </div>
+      <div class="blk">
+        <h3>⚖️ 评分权重（实时预览）</h3>
+        <div id="w-box"></div>
+        <div class="sm" id="w-preview">—</div>
+      </div>
+      <div class="blk">
+        <h3>🚫 拉黑管理</h3>
+        <div id="bl-list"></div>
+        <div class="acts"><input id="bl-in" placeholder="拉黑域名，如 scam.com" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:13px"><button class="btn p" onclick="addBl()">添加</button></div>
+      </div>
+      <div class="blk">
+        <h3>🩺 数据健康度</h3>
+        <div id="health-detail"></div>
+      </div>
+      <div class="blk">
+        <h3>🔒 安全</h3>
+        <div class="sm">锁定后需重新输入密码；本机反馈与缓存数据会一并清除。</div>
+        <div class="acts"><button class="btn dg" onclick="lockApp()">锁定 App</button></div>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <a class="on" data-tab="discover"><span class="ic">🔍</span>发现</a>
+    <a data-tab="follow"><span class="ic">📌</span>在跟</a>
+    <a data-tab="rank"><span class="ic">🏆</span>排行</a>
+    <a data-tab="set"><span class="ic">⚙️</span>设置</a>
+  </nav>
+</div>
+
+<div class="mask" id="mask"><div class="sheet" id="sheet"></div></div>
+
+<script>
+/* ==================== 密码保护 ==================== */
+const PWD="promo888ok";
+const UNLOCK_KEY="promo_radar_unlocked";
+const CACHE_KEY="promo_radar_data_cache";
+
+function unlock(){
+  const v=document.getElementById("pwd").value;
+  if(v===PWD){
+    try{localStorage.setItem(UNLOCK_KEY,"1");}catch(e){}
+    document.getElementById("pwderr").textContent="";
+    enterApp();
+  }else{
+    document.getElementById("pwderr").textContent="密码错误";
+    document.getElementById("pwd").value="";
+  }
+}
+function enterApp(){
+  document.getElementById("lock").classList.add("hide");
+  document.getElementById("app").classList.remove("hide");
+  if(!window.__dataLoaded)loadData();
+}
+function lockApp(){
+  if(!confirm("确定锁定？将清除本机解锁状态、反馈与缓存数据，需重新输入密码。"))return;
+  try{localStorage.clear();}catch(e){}
+  location.reload();
+}
+
+/* ==================== 数据加载 ==================== */
+let PROJECTS=[], LAST_UPDATE="—", DATA_SOURCE="";
+async function loadData(){
+  const lb=document.getElementById("loadbox");
+  lb.style.display="block";
+  lb.textContent="数据加载中，请稍后刷新";
+  try{
+    const r=await fetch("./data.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    PROJECTS=d.projects||[];
+    LAST_UPDATE=d.lastUpdate||"未获取";
+    DATA_SOURCE="online";
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e){}
+    onDataReady();
+  }catch(e){
+    // 离线兜底：使用上次缓存
+    try{
+      const c=localStorage.getItem(CACHE_KEY);
+      if(c){
+        const d=JSON.parse(c);
+        PROJECTS=d.projects||[];LAST_UPDATE=(d.lastUpdate||"未获取")+"（离线缓存）";
+        DATA_SOURCE="cache";
+        onDataReady();return;
+      }
+    }catch(e2){}
+    lb.textContent="数据加载中，请稍后刷新";
+    document.getElementById("filters").style.display="none";
+  }
+}
+function onDataReady(){
+  window.__dataLoaded=true;
+  document.getElementById("loadbox").style.display="none";
+  document.getElementById("filters").style.display="block";
+  document.getElementById("m-update").textContent="更新："+LAST_UPDATE;
+  document.getElementById("m-count").textContent="项目："+PROJECTS.length;
+  document.getElementById("m-new").textContent="今日新增："+PROJECTS.length;
+  buildFilterChips();renderList();renderRank();renderHeader2();
+}
+function renderHeader2(){document.getElementById("m-update").textContent="更新："+LAST_UPDATE;}
+
+/* ==================== 本地状态 ==================== */
+const LS_FOLLOW="pr_follow",LS_FB="pr_feedback",LS_KW="pr_keywords",LS_BL="pr_blacklist",LS_W="pr_weights";
+let followed=JSON.parse(localStorage.getItem(LS_FOLLOW)||"{}");
+let feedback=JSON.parse(localStorage.getItem(LS_FB)||"{}");
+let keywords=JSON.parse(localStorage.getItem(LS_KW)||'["AI工具","SaaS","短剧","大模型API","拉新奖励","本地生活"]');
+let blacklist=JSON.parse(localStorage.getItem(LS_BL)||"[]");
+let weights=JSON.parse(localStorage.getItem(LS_W)||'{"rev":45,"fresh":25,"safety":15,"access":15}');
+
+function compClass(c){return c==="✅合规"?"ok":c==="⚠️待核"?"warn":c==="🔴风险"?"bad":c==="🚫拉黑"?"blk":"gray";}
+function confClass(c){return c==="高"?"ok":c==="中"?"warn":c==="低"?"bad":"gray";}
+function computeScore(p,w){
+  let s=(p.revPot||0)*(w.rev/100)+(p.fresh||0)*(w.fresh/100)+(p.safety||0)*(w.safety/100)+(p.access||0)*(w.access/100);
+  if(p.redOcean)s*=0.7;
+  if(p.lowConf)s*=0.6;
+  if(p.runHistory)s*=0.3;
+  return Math.round(s*10)/10;
+}
+function isBlocked(p){return blacklist.some(d=>(p.url||"").includes(d)||(p.sourceUrl||"").includes(d));}
+
+/* ==================== 发现页 ==================== */
+let fType="all",fComp="all",fChan="all",fYield="all",sortBy="score";
+function buildFilterChips(){
+  const types=[...new Set(PROJECTS.map(p=>p.type).filter(Boolean))];
+  document.getElementById("f-type").innerHTML=["all",...types].map(t=>`<span class="chip${t==='all'?' on':''}" data-f="type" data-v="${t}">${t==='all'?'全部':t}</span>`).join("");
+  const comps=["all","✅合规","⚠️待核","🔴风险","🚫拉黑"];
+  document.getElementById("f-comp").innerHTML=comps.map(c=>`<span class="chip${c==='all'?' on':''}" data-f="comp" data-v="${c}">${c==='all'?'全部':c}</span>`).join("");
+  const chans=["私域","短视频","朋友圈","内容种草","地推"];
+  document.getElementById("f-chan").innerHTML=["all",...chans].map(c=>`<span class="chip${c==='all'?' on':''}" data-f="chan" data-v="${c}">${c==='all'?'全部':c}</span>`).join("");
+  document.querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{
+    const f=ch.dataset.f,v=ch.dataset.v;
+    if(f==="type")fType=v;if(f==="comp")fComp=v;if(f==="chan")fChan=v;if(f==="yield")fYield=v;
+    document.querySelectorAll('.chip[data-f="'+f+'"]').forEach(x=>x.classList.remove("on"));
+    ch.classList.add("on");renderList();
+  });
+  const y=document.querySelector('.chip[data-f="yield"][data-v="all"]');if(y)y.classList.add("on");
+}
+function renderList(){
+  let arr=PROJECTS.filter(p=>{
+    if(p.compliance==="🚫拉黑")return false;
+    if(fComp!=="all"&&p.compliance!==fComp)return false;
+    if(fType!=="all"&&p.type!==fType)return false;
+    if(fChan!=="all"&&!(p.channel||"").includes(fChan))return false;
+    if(fYield==="high"&&!p.highYield)return false;
+    if(isBlocked(p))return false;
+    return true;
+  });
+  arr.sort((a,b)=>{
+    if(sortBy==="score")return computeScore(b,weights)-computeScore(a,weights);
+    if(sortBy==="fresh")return (b.fresh||0)-(a.fresh||0);
+    if(sortBy==="rev")return (b.revPot||0)-(a.revPot||0);
+    if(sortBy==="fast")return (a.settleRank||9)-(b.settleRank||9);
+    return 0;
+  });
+  const box=document.getElementById("list");
+  if(!arr.length){box.innerHTML='<div class="empty">没有符合筛选条件的项目</div>';return;}
+  box.innerHTML=arr.map(p=>{
+    const sc=computeScore(p,weights);
+    const fb=feedback[p.id]||{};
+    return `<div class="card ${p.compliance==='🔴风险'?'folded':''}">
+      <div class="badges">
+        <span class="b score">${sc}分</span>
+        <span class="b ${compClass(p.compliance)}">${p.compliance||'未获取'}</span>
+        <span class="b blue">${p.competition||'竞争度未获取'}</span>
+        <span class="b ${confClass(p.confidence)}">置信度${p.confidence||'未获取'}</span>
+        ${p.highYield?'<span class="b warn">高收益</span>':''}
+        ${p.lowConf?'<span class="b bad">不进Top</span>':''}
+        ${p.secondSrc?'<span class="b gray">待二次核实</span>':''}
+        ${fb.status?`<span class="b gray">${fb.status}</span>`:''}
+      </div>
+      <div class="pname">${p.name}</div>
+      <div class="pco">${p.company||'未获取'} · ${p.type||''} · ${p.model||''}</div>
+      <div class="pline"><span class="k">💰 佣金</span><span>${p.commission||'未获取'}</span></div>
+      <div class="pline"><span class="k">⏰ 结算</span><span>${p.settle||'未获取'} · 门槛 ${p.minPayout||'未获取'}</span></div>
+      <div class="pline"><span class="k">📅 上线</span><span>${p.launch||'未获取'}</span></div>
+      <div class="acts">
+        <button class="btn" onclick="openDetail('${p.id}')">查看证据</button>
+        <button class="btn p" onclick="window.open('${p.url}','_blank')">加入推广</button>
+        <button class="btn s" onclick="markFollow('${p.id}')">已尝试</button>
+        <button class="btn s" onclick="quickFb('${p.id}','到账了')">到账了</button>
+        <button class="btn s" onclick="quickFb('${p.id}','放弃')">放弃</button>
+        <button class="btn s" onclick="quickFb('${p.id}','信息有误')">信息有误</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+function openDetail(id){
+  const p=PROJECTS.find(x=>x.id===id);if(!p)return;
+  const sc=computeScore(p,weights);
+  document.getElementById("sheet").innerHTML=`
+    <div class="close"><span onclick="closeDetail()">关闭 ✕</span></div>
+    <h2>${p.name}</h2>
+    <div class="badges" style="margin:6px 0">
+      <span class="b score">${sc}分</span>
+      <span class="b ${compClass(p.compliance)}">${p.compliance||''}</span>
+      <span class="b blue">${p.competition||''}</span>
+      <span class="b ${confClass(p.confidence)}">置信度${p.confidence||''}</span>
+      ${p.secondSrc?'<span class="b gray">'+p.secondSrc+'</span>':''}
+    </div>
+    <div class="field"><span class="k">主办方 / 公司</span>${p.company||'未获取'}</div>
+    <div class="field"><span class="k">产品类型</span>${p.type||'未获取'}</div>
+    <div class="field"><span class="k">分佣模式</span>${p.model||'未获取'}</div>
+    <div class="field"><span class="k">佣金详情（口径）</span>${p.commission||'未获取'}</div>
+    <div class="field"><span class="k">结算周期</span>${p.settle||'未获取'}</div>
+    <div class="field"><span class="k">最低提现门槛</span>${p.minPayout||'未获取'}</div>
+    <div class="field"><span class="k">活动上线时间</span>${p.launch||'未获取'}</div>
+    <div class="field"><span class="k">活动截止时间</span>${p.deadline||'未获取'}</div>
+    <div class="field"><span class="k">准入条件原文（逐字）</span>${p.entryReq||'未获取'}</div>
+    <div class="field"><span class="k">准入类型</span>${p.entryType||'未获取'}</div>
+    <div class="field"><span class="k">最佳推广渠道</span>${p.channel||'未获取'}</div>
+    <div class="field"><span class="k">竞争度</span>${p.competition||'未获取'}</div>
+    <div class="field"><span class="k">合规详情（风险原因）</span><span class="${p.compliance==='🔴风险'||p.compliance==='🚫拉黑'?'danger':''}">${p.riskReason||'未获取'}</span></div>
+    <div class="field"><span class="k">待人工核实</span>ICP备案：<a href="https://beian.miit.gov.cn" target="_blank">beian.miit.gov.cn</a>　工商：<a href="https://www.tianyancha.com" target="_blank">tianyancha.com</a></div>
+    <div class="field"><span class="k">证据原文（逐字，≤200字）</span><div class="ev">${p.evidence||'未获取'}</div></div>
+    <div class="field"><span class="k">来源URL</span><a href="${p.sourceUrl}" target="_blank">${p.sourceUrl||'未获取'}</a></div>
+    <div class="field"><span class="k">抓取时间</span>${p.fetchTime||'未获取'}</div>
+    <div class="field"><span class="k">推广链接</span><a href="${p.url}" target="_blank">${p.url||'未获取'}</a></div>
+    <div class="acts">
+      <button class="btn p" onclick="window.open('${p.url}','_blank')">加入推广</button>
+      <button class="btn" onclick="markFollow('${p.id}');closeDetail()">标记已尝试</button>
+    </div>`;
+  document.getElementById("mask").classList.add("on");
+}
+function closeDetail(){document.getElementById("mask").classList.remove("on");}
+document.getElementById("sort").onchange=e=>{sortBy=e.target.value;renderList();};
+
+/* ==================== 反馈 / 在跟 / 排行 ==================== */
+function markFollow(id){
+  if(!followed[id]){followed[id]={hours:0,est:0,actual:0,status:"已尝试",added:new Date().toISOString().slice(0,10)};saveFollow();}
+  switchTab('follow');
+}
+function quickFb(id,status){
+  feedback[id]=Object.assign({status,ts:new Date().toISOString().slice(0,10)},feedback[id]||{});
+  localStorage.setItem(LS_FB,JSON.stringify(feedback));
+  if(["到账了","放弃","跑路","扣量"].includes(status)){followed[id]=followed[id]||{hours:0,est:0,actual:0,added:new Date().toISOString().slice(0,10)};followed[id].status=status;saveFollow();}
+  renderList();renderRank();toast("已记录「"+status+"」");
+}
+function saveFollow(){localStorage.setItem(LS_FOLLOW,JSON.stringify(followed));}
+function cycleDays(p){return p.settleRank===1?1:p.settleRank===2?7:p.settleRank===3?30:30;}
+function renderFollow(){
+  const ids=Object.keys(followed),box=document.getElementById("follow-list");
+  if(!ids.length){box.innerHTML='<div class="empty">还没有「已尝试」的项目</div>';return;}
+  box.innerHTML=ids.map(id=>{
+    const p=PROJECTS.find(x=>x.id===id)||{name:id,settleRank:3};const f=followed[id];
+    return `<div class="card">
+      <div class="pname" style="font-size:14px">${p.name}</div>
+      <div class="sm">结算周期≈${cycleDays(p)}天 · 加入 ${f.added||'—'} · 预计到账 ${f.added?addDays(f.added,cycleDays(p)):'—'}</div>
+      <div class="field"><span class="k">投入时间(小时)</span><input type="number" min="0" step="0.5" value="${f.hours}" onchange="upd('${id}','hours',this.value)" style="width:100px;padding:5px;border:1px solid var(--line);border-radius:6px"></div>
+      <div class="field"><span class="k">预估佣金(元)</span><input type="number" min="0" value="${f.est}" onchange="upd('${id}','est',this.value)" style="width:100px;padding:5px;border:1px solid var(--line);border-radius:6px"></div>
+      <div class="field"><span class="k">实际到账(元)</span><input type="number" min="0" value="${f.actual}" onchange="upd('${id}','actual',this.value)" style="width:100px;padding:5px;border:1px solid var(--line);border-radius:6px"></div>
+      <div class="field"><span class="k">状态</span><select onchange="upd('${id}','status',this.value)">
+        ${["已尝试","到账了","放弃","跑路","扣量","信息有误"].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join("")}</select></div>
+      <div class="acts"><button class="btn s" onclick="delFollow('${id}')">移除</button></div>
+    </div>`;
+  }).join("");
+}
+function upd(id,k,v){followed[id][k]=(k==="hours"||k==="est"||k==="actual")?(parseFloat(v)||0):v;saveFollow();renderRank();}
+function delFollow(id){delete followed[id];saveFollow();renderFollow();renderRank();}
+function addDays(d,n){const t=new Date(d+"T00:00:00");t.setDate(t.getDate()+n);return t.toISOString().slice(0,10);}
+function renderRank(){
+  const ids=Object.keys(followed);
+  const hour=ids.map(id=>({p:PROJECTS.find(x=>x.id===id)||{name:id},f:followed[id]})).filter(x=>x.f.hours>0&&x.f.actual>0).sort((a,b)=>(b.f.actual/b.f.hours)-(a.f.actual/a.f.hours));
+  document.getElementById("rank-hour").innerHTML=hour.length?hour.map(x=>`<div class="kv"><span>${x.p.name}</span><b>¥${(x.f.actual/x.f.hours).toFixed(1)}/时</b></div>`).join(""):'<div class="sm">暂无（需填投入时间与实际到账）</div>';
+  const rate=ids.map(id=>({p:PROJECTS.find(x=>x.id===id)||{name:id},f:followed[id]})).filter(x=>x.f.est>0&&x.f.actual>0).sort((a,b)=>(b.f.actual/b.f.est)-(a.f.actual/a.f.est));
+  document.getElementById("rank-rate").innerHTML=rate.length?rate.map(x=>`<div class="kv"><span>${x.p.name}</span><b>${(x.f.actual/x.f.est*100).toFixed(0)}%</b></div>`).join(""):'<div class="sm">暂无（需填预估与实际到账）</div>';
+  const pit=ids.map(id=>({p:PROJECTS.find(x=>x.id===id)||{name:id},f:followed[id]})).filter(x=>["放弃","跑路","扣量","信息有误"].includes(x.f.status));
+  document.getElementById("rank-pit").innerHTML=pit.length?pit.map(x=>`<div class="kv"><span>${x.p.name}</span><b class="danger">${x.f.status}</b></div>`).join(""):'<div class="sm">暂无踩坑记录 👍</div>';
+}
+
+/* ==================== 设置 ==================== */
+function genSync(){const d={followed,feedback,keywords,blacklist,weights,exported:new Date().toISOString().slice(0,10)};
+  document.getElementById("sync-out").value=btoa(unescape(encodeURIComponent(JSON.stringify(d))));toast("同步码已生成");}
+function copySync(){const t=document.getElementById("sync-out");if(!t.value){toast("请先生成");return;}t.select();document.execCommand("copy");toast("已复制");}
+function importSync(){const v=document.getElementById("sync-in").value.trim();if(!v){toast("请粘贴同步码");return;}
+  try{const d=JSON.parse(decodeURIComponent(escape(atob(v))));
+    followed=Object.assign(followed,d.followed||{});feedback=Object.assign(feedback,d.feedback||{});
+    keywords=d.keywords||keywords;blacklist=d.blacklist||blacklist;weights=d.weights||weights;saveAll();toast("已导入");renderAll();
+  }catch(e){toast("同步码无效");}}
+function saveAll(){localStorage.setItem(LS_FOLLOW,JSON.stringify(followed));localStorage.setItem(LS_FB,JSON.stringify(feedback));
+  localStorage.setItem(LS_KW,JSON.stringify(keywords));localStorage.setItem(LS_BL,JSON.stringify(blacklist));localStorage.setItem(LS_W,JSON.stringify(weights));}
+function addKw(){const v=document.getElementById("kw-in").value.trim();if(v&&!keywords.includes(v)){keywords.push(v);localStorage.setItem(LS_KW,JSON.stringify(keywords));renderKw();document.getElementById("kw-in").value="";}}
+function renderKw(){document.getElementById("kw-list").innerHTML=keywords.length?keywords.map((k,i)=>`<span class="tag" onclick="delKw(${i})">${k} ✕</span>`).join(""):'<div class="sm">空</div>';}
+function delKw(i){keywords.splice(i,1);localStorage.setItem(LS_KW,JSON.stringify(keywords));renderKw();}
+function addBl(){const v=document.getElementById("bl-in").value.trim().toLowerCase();if(v&&!blacklist.includes(v)){blacklist.push(v);localStorage.setItem(LS_BL,JSON.stringify(blacklist));renderBl();document.getElementById("bl-in").value="";renderList();}}
+function renderBl(){document.getElementById("bl-list").innerHTML=blacklist.length?blacklist.map((d,i)=>`<span class="tag" onclick="delBl(${i})">${d} ✕</span>`).join(""):'<div class="sm">未拉黑任何域名</div>';}
+function delBl(i){blacklist.splice(i,1);localStorage.setItem(LS_BL,JSON.stringify(blacklist));renderBl();renderList();}
+function renderWeights(){
+  const keys=[["rev","收益潜力"],["fresh","新鲜度"],["safety","安全系数"],["access","准入匹配度"]];
+  document.getElementById("w-box").innerHTML=keys.map(([k,n])=>`<div class="wrow"><span class="wn">${n}</span>
+    <input type="range" min="0" max="100" value="${weights[k]}" oninput="wSlide('${k}',this.value)"><span class="wv" id="wv-${k}">${weights[k]}</span></div>`).join("");
+  updatePreview();
+}
+function wSlide(k,v){weights[k]=+v;document.getElementById("wv-"+k).textContent=v;localStorage.setItem(LS_W,JSON.stringify(weights));updatePreview();renderList();}
+function updatePreview(){const s=[...PROJECTS].filter(p=>p.compliance!=="🚫拉黑"&&!isBlocked(p)).sort((a,b)=>computeScore(b,weights)-computeScore(a,weights));
+  document.getElementById("w-preview").textContent=s.length?`当前Top1：${s[0].name}（${computeScore(s[0],weights)}分）`:"—";}
+function renderHealth(){
+  const t=PROJECTS.length;
+  const c=x=>PROJECTS.filter(p=>p.compliance===x).length;
+  document.getElementById("health-detail").innerHTML=
+    `<div class="kv"><span>项目总数</span><b>${t}</b></div>
+     <div class="kv"><span>✅合规</span><b class="ok">${c("✅合规")}</b></div>
+     <div class="kv"><span>⚠️待核</span><b class="warn">${c("⚠️待核")}</b></div>
+     <div class="kv"><span>🔴风险</span><b class="danger">${c("🔴风险")}</b></div>
+     <div class="kv"><span>🚫拉黑</span><b>${c("🚫拉黑")}</b></div>
+     <div class="kv"><span>数据来源</span><b>${DATA_SOURCE==="cache"?"离线缓存":"联网"}</b></div>
+     <div class="kv"><span>信息有误反馈</span><b>${Object.values(feedback).filter(f=>f.status==="信息有误").length} 条</b></div>`;
+}
+
+/* ==================== Tab / toast ==================== */
+function switchTab(t){
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.tab===t));
+  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));
+  document.getElementById("sec-"+t).classList.add("on");
+  if(t==="follow")renderFollow();
+  if(t==="rank")renderRank();
+  if(t==="set"){renderKw();renderBl();renderWeights();renderHealth();}
+}
+document.querySelectorAll("nav a").forEach(a=>a.onclick=()=>switchTab(a.dataset.tab));
+function renderAll(){buildFilterChips();renderList();renderFollow();renderRank();renderKw();renderBl();renderWeights();}
+let tt;function toast(m){let el=document.getElementById("toast");if(!el){el=document.createElement("div");el.id="toast";
+  el.style.cssText="position:fixed;left:50%;top:22%;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;z-index:9999";document.body.appendChild(el);}
+  el.textContent=m;el.style.display="block";clearTimeout(tt);tt=setTimeout(()=>el.style.display="none",1600);}
+
+/* ==================== PWA 离线（Service Worker，https 下生效） ==================== */
+try{
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+}catch(e){}
+
+/* ==================== 启动 ==================== */
+(function init(){
+  let unlocked=false;
+  try{unlocked=localStorage.getItem(UNLOCK_KEY)==="1";}catch(e){}
+  if(unlocked){enterApp();}
+  else{
+    document.getElementById("lock").classList.remove("hide");
+    document.getElementById("app").classList.add("hide");
+    setTimeout(()=>document.getElementById("pwd").focus(),200);
+  }
+})();
+</script>
+</body>
+</html>
