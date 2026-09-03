@@ -1,7 +1,7 @@
-/* 小说创作工作台 · Service Worker
-   策略：data.json 网络优先（素材更新能生效）+ 失败回落缓存；应用外壳缓存优先。
-   注意：稿件正文存在 IndexedDB，不经过 SW，无需在此处理。 */
-const CACHE = "novel-studio-v1";
+/* 推广机会雷达 · Service Worker
+   策略：data.json 网络优先（保证每天更新能生效）+ 失败回落缓存；
+        应用外壳（index.html）缓存优先 + 后台更新。 */
+const CACHE = "promo-radar-v1";
 const SHELL = ["./", "./index.html", "./sw.js"];
 
 self.addEventListener("install", e => {
@@ -19,7 +19,7 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
 
-  // 素材数据：网络优先，失败回落缓存
+  // 数据：网络优先，失败用缓存（离线可用）
   if (url.pathname.endsWith("/data.json")) {
     e.respondWith(
       fetch(e.request)
@@ -33,7 +33,7 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // 应用外壳：缓存优先，后台更新
+  // 外壳：缓存优先，后台更新
   e.respondWith(
     caches.match(e.request).then(hit => {
       const net = fetch(e.request).then(res => {
